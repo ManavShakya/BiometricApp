@@ -9,6 +9,8 @@ import androidx.biometric.BiometricPrompt
 import androidx.core.content.ContextCompat
 import java.util.concurrent.Executor
 
+/*this file contains old code for reference
+ */
 class MyActivity : AppCompatActivity() {
 
     private lateinit var executor: Executor
