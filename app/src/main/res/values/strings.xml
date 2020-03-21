@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">Biometric App</string>
+    <string name="sample_text">Write some text here to be decrypted</string>
 </resources>
