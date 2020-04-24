@@ -5,6 +5,7 @@ import android.security.keystore.KeyGenParameterSpec
 import android.security.keystore.KeyProperties
 import android.util.Log
 import android.view.View
+import android.view.View.OnClickListener
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.biometric.BiometricManager
@@ -24,6 +25,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var executor: Executor
     private lateinit var biometricManager: BiometricManager
     private lateinit var biometricPrompt: BiometricPrompt
+
     private lateinit var promptInfo : BiometricPrompt.PromptInfo
     private var isAuthorised = false    // a flag for differentiating the authentication use case
     private var isEncrypt: Boolean = false
@@ -41,13 +43,24 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        mainLayout.visibility = View.GONE
-        executor = ContextCompat.getMainExecutor(this)
+        mainLayout.visibility = View.GONE // mainLayout is simply the assigned id of activity_main
+        executor = ContextCompat.getMainExecutor(this)  // an executor is a better alternative of a runnable thread
         biometricManager = BiometricManager.from(this)
-        //
-        authoriseUserSession(biometricManager)
-        performCrypto()
 
+        // performs authentication when opening the app
+        authoriseUserSession(biometricManager)
+
+        keyName = "sample_key"  //secret key
+        buttonEncrypt.setOnClickListener ( object: OnClickListener {
+            override fun onClick(v: View?) {
+                authenticateToEncrypt()
+            }
+        })
+        buttonDecrypt.setOnClickListener ( object: OnClickListener {
+            override fun onClick(v: View?) {
+                authenticateToEncrypt()
+            }
+        })
     }
 
     /**
@@ -57,8 +70,8 @@ class MainActivity : AppCompatActivity() {
         when (biometricManager.canAuthenticate()) {
 
             BiometricManager.BIOMETRIC_SUCCESS -> authenticateUser(executor)
-            // for devices which don't have fingerprint sensor, they can use credentials for authentication
-            BiometricManager.BIOMETRIC_ERROR_NO_HARDWARE -> authenticateUser(executor)
+            BiometricManager.BIOMETRIC_ERROR_NO_HARDWARE -> Toast
+                .makeText(this, "No fingerprint sensor present on device", Toast.LENGTH_LONG).show()
             BiometricManager.BIOMETRIC_ERROR_HW_UNAVAILABLE -> Toast
                 .makeText(this, "Biometric features are currently unavailable", Toast.LENGTH_LONG).show()
             BiometricManager.BIOMETRIC_ERROR_NONE_ENROLLED -> Toast
@@ -102,11 +115,21 @@ class MainActivity : AppCompatActivity() {
             })
     }
 
+    private fun createPromptInfo(): BiometricPrompt.PromptInfo {
+
+        return BiometricPrompt.PromptInfo.Builder()
+            .setTitle("Authentication Required")
+            .setSubtitle("Log in using Biometric")
+            .setDescription("Touch your fingerprint sensor to authenticate")
+            .setNegativeButtonText("Use credentials")
+            //.setDeviceCredentialAllowed(true)
+            //.setConfirmationRequired(true)
+            .build()
+    }
+
     private fun performCrypto() {
         // secretkey
-        keyName = "biometric_sample_encryption_key"
-        buttonEncrypt.setOnClickListener  { authenticateToEncrypt() }
-        buttonDecrypt.setOnClickListener { authenticateToDecrypt() }
+
     }
 
     private fun authenticateToEncrypt() {
@@ -120,18 +143,6 @@ class MainActivity : AppCompatActivity() {
             cipher.init(Cipher.ENCRYPT_MODE, secretKey)
             biometricPrompt.authenticate(promptInfo, BiometricPrompt.CryptoObject(cipher))
         }
-    }
-
-    private fun createPromptInfo(): BiometricPrompt.PromptInfo {
-
-        return BiometricPrompt.PromptInfo.Builder()
-            .setTitle("Authentication Required")
-            .setSubtitle("Log in using Biometric")
-            .setDescription("Touch your fingerprint sensor to authenticate")
-            .setNegativeButtonText("Use credentials")
-            //.setDeviceCredentialAllowed(true)
-            //.setConfirmationRequired(true)
-            .build()
     }
 
     private fun authenticateToDecrypt() {
